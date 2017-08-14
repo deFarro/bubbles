@@ -12,11 +12,14 @@ var score = 0, turns = 0;
 
 againButton.addEventListener('click', startOver);
 
+// Array for directions needed to check neighbour cells
+var directions = [-10, 1, 10, -1];
+
 function rand(x) {
   return Math.round(Math.random() * x);
 }
 
-// Расставляем шарики на поле. Задаём случайный цвет, вешаем обработчики
+// Putting bubbles on the field. Generating random color for a bubble, adding listeners
 dots.forEach((dot, index) => initDots(dot, index));
 function initDots(cell, index) {
   cell.innerHTML = '&#9673;';
@@ -28,7 +31,7 @@ function initDots(cell, index) {
   cell.addEventListener('click', clickOnDot);
 }
 
-// Фунция клика по шарику. Обновляет счётчих ходов и запускает нужные функции
+// Function to click on a bubble. It refreshes turns counter and launches proper callback functions
 function clickOnDot() {
   if (this.style.color === background) {
     return;
@@ -40,34 +43,31 @@ function clickOnDot() {
   updateField();
 }
 
-// Функция "уничтожения" шарика
+// Function to “destroy” a bubble
 function destroy() {
   this.dataset.processed = true;
-  findBros(this);
-  // Перекрашиваем шарик в цвет фона на обратном проходе рекурсии
+  findBros(this, directions);
+  // It repaints bubble to background color on the way back from recursive calls
   this.style.color = background;
   updateScore();
 }
 
-// Массив с направлениями проверки соседних клеток
-var directions = [-10, 1, 10, -1];
-
-// Функция проверки соседний клеток на совпадение цвета. Если "брат" найден, функция вызывается рекурсивно уже для него
-function findBros(cell) {
+// Function to check if neighbour cells match the color of original cell. If it finds a “brother” it calls itself for found cell
+function findBros(cell, directions) {
   for (let step of directions) {
     let target = dots[parseInt(cell.dataset.index) + step];
     if (!target) {
       continue;
     }
-    // Если шарик, который мы проверяем стоит в правой крайней колонке - соседей справа не проверяем
+    // If we check cell in the first column from the right, we don’t check neighbour from the right
     if ((parseInt(cell.dataset.index) + 1) % 10 === 0 && step === 1) {
       continue;
     }
-    // То же самое, если стоит в левой крайней
+    // The same thing for the first column from the left
     if (parseInt(cell.dataset.index) % 10 === 0 && step === -1) {
       continue;
     }
-    // Если соседняя клетка пустая, либо мы её уже проверяли идём дальше
+    // If neighbour cell is empty or we have already checked it, we skip it
     if (target.style.color === background || target.dataset.processed === 'true') {
       continue;
     }
@@ -77,21 +77,21 @@ function findBros(cell) {
   }
 }
 
-// Функция сброса статуса "проверен", которым помечаются найденные соседи одного цвета
+// Function to reset “cheched” stasuses which we used to mark cells we had finished with
 function resetStatuses() {
   dots.forEach((dot) => {
     dot.dataset.processed = false;
   });
 }
 
-// Функция обновления поля - если под шариком есть свободное место, мы его роняем
+// Function to update the field. If there is empy space under a bubble, we drop it down
 function updateField() {
   for (let i = dots.length; i >= 0; i--) {
-  // Клетки в нижнем ряду игнорируем
+    // Ignores dots in bottom row
     if (!dots[i + 10]) {
       continue;
     }
-  // Как и уничтоженные шарики
+    // As well as destroyed bubbles
     if (dots[i].style.color === background) {
       continue;
     }
@@ -99,21 +99,21 @@ function updateField() {
   }
 }
 
-// Функция перерисовки шарика ниже, пока есть свободное место или не закончится поле
+// Function for redraw a bubble one row below if these us any free space or the field ends
 function dropDot(index) {
   if (!dots[index + 10]) {
     return;
-    }
+  }
   if (dots[index + 10].style.color === background) {
     dots[index + 10].style.color = dots[index].style.color;
     dots[index].style.color = background;
     let down = index + 10;
-    // Вызываем эту же функцию для перерисованного ниже шарика
+    // Function calls itself for the bubble redrawn below
     dropDot(down);
-    }
+  }
 }
 
-// Функция для обновления счёта. Если все шарики уничтожены - выводим экран с результатом
+// Function for updating the score. If all bubbles are destroyed it displays the screen with results
 function updateScore() {
   score += 10;
   scoreBoard.innerHTML = score;
@@ -127,7 +127,7 @@ function updateScore() {
   }
 }
 
-// Функция начала новой партии. Обнуляем счётчики, заново инициализируем шарики
+// Function for restarting the game. Nullifies the score, initializes bubbles on the field
 function startOver() {
   againButton.classList.toggle('hidden');
   score = 0, turns = 0;
